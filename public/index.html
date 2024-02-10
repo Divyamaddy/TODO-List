@@ -1,0 +1,298 @@
+<!-- <!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+    <title><%= htmlWebpackPlugin.options.title %></title>
+  </head>
+  <body>
+    <noscript>
+      <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+    </noscript>
+    <div id="app"></div>
+    built files will be auto injected -->
+<!-- </body>
+</html>  -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vue.js To-Do List</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@1,400;1,500&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      color: #333;
+      font-family: 'Roboto', sans-serif;
+      background-color: #a7a51f;
+    }
+
+    #app {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      box-shadow: 2px 2px 2px #aaa;
+    }
+
+    h1,
+    h2 {
+      text-align: center;
+      color: #0f130a;
+    }
+
+    input[type="text"] {
+      width: calc(100% - 90px);
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      outline: none;
+    }
+
+    button {
+      width: 80px;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: none;
+      border-radius: 5px;
+      background-color: #3d95d0;
+      color: #fff;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+    }
+
+    .completed {
+      text-decoration: line-through;
+      color: #888;
+
+    }
+
+    .completed span {
+      color: #aaa;
+    }
+
+    .edit {
+      margin-left: 10rem;
+      background-color: #ca2929;
+    }
+  </style>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <h1>To-Do List</h1>
+    <div style="display: flex;">
+      <input type="text" v-model="newTask" placeholder="Add new task...">
+      <button @click="addTask">Add Task</button>
+    </div>
+    <ul>
+      <li v-for="(task, index) in tasks" :key="index">
+        <input type="checkbox" v-model="task.completed" @change="updateTask(task)">
+        <span :class="{ completed: task.completed }">{{ task.text }}</span>
+        <span v-if="task.completed" class="completed">Completed on <span>{{ task.date }}</span></span>
+        <span v-else>Added on <span>{{ task.date }}</span></span> <!-- Display date if task is not completed -->
+        <button class="edit" @click="editTask(index)">Edit</button>
+      </li>
+    </ul>
+    <h2>Completed Tasks</h2>
+    <ul>
+      <li v-for="(task, index) in completedTasks" :key="index">
+        <span class="completed">{{ task.text }}</span>
+        <span>Completed on <span>{{ task.date }}</span></span>
+      </li>
+    </ul>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const app = new Vue({
+      el: '#app',
+      data: {
+        newTask: '',
+        tasks: [],
+        completedTasks: [],
+      },
+      created() {
+        this.loadTasks();
+      },
+      methods: {
+        addTask() { // api integrated
+          if (this.newTask.trim() === '') return;
+          const task = {
+            text: this.newTask,
+            completed: false,
+            date: new Date().toLocaleString(),
+          };
+
+          this.tasks.push(task); // to remove later          
+          this.saveTasks();
+          this.newTask = '';
+        },
+        updateTask(task) {
+
+          if (task.completed) {
+            const index = this.tasks.indexOf(task);
+            this.completedTasks.push(this.tasks.splice(index, 1)[0]);
+          } else {
+            const index = this.completedTasks.indexOf(task);
+            this.tasks.push(this.completedTasks.splice(index, 1)[0]);
+          }
+          this.saveTasks();
+        },
+        editTask(index) {
+          const newText = prompt('Edit task:', this.tasks[index].text);
+          if (newText !== null && newText.trim() !== '') {
+            this.tasks[index].text = newText;
+            this.saveTasks();
+          }
+        },
+        loadTasks() {
+          // let savedCompletedTasks = JSON.parse(localStorage.getItem('completedTasks'));
+
+          let config = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: 'http://localhost:8000/tasks',
+            headers: {}
+          };
+
+          axios.request(config)
+            .then((response) => {
+              savedTasks = response.data;
+              this.tasks = savedTasks;
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+
+
+          let config2 = {
+            method: 'get',
+            maxBodyLength: Infinity,
+            url: 'http://localhost:8000/completedTasks',
+            headers: {}
+          };
+
+          axios.request(config2)
+            .then((response) => {
+              savedTasks = response.data;
+              this.completedTasks = savedTasks;
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+        },
+        async saveTasks() {
+
+          let data = JSON.stringify({
+            "tasks": [],
+            "completedTasks": []
+          });
+
+          let config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: 'http://localhost:8000/reset',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            data: data
+          };
+
+          await axios.request(config)
+            .then((response) => {
+              console.log(JSON.stringify(response.data));
+            })
+            .catch((error) => {
+              console.log(error);
+            });
+
+          this.tasks.forEach((task, index) => {
+            console.log(task);
+            let data = JSON.stringify(task);
+            // code to post task to json server
+            let config = {
+              method: 'post',
+              maxBodyLength: Infinity,
+              url: 'http://localhost:8000/tasks',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              data: data
+            };
+
+            axios.request(config)
+              .then((response) => {
+                console.log(JSON.stringify(response.data));
+              })
+              .catch((error) => {
+                console.log(error);
+              });
+          });
+
+          this.completedTasks.forEach((task, index) => {
+            let data = JSON.stringify(task);
+            console.log(task)
+
+            // code to post task to json server
+            let config = {
+              method: 'post',
+              maxBodyLength: Infinity,
+              url: 'http://localhost:8000/completedTasks',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              data: data
+            };
+
+            axios.request(config)
+              .then((response) => {
+                console.log(JSON.stringify(response.data));
+              })
+              .catch((error) => {
+                console.log(error);
+              });
+          });
+          // localStorage.setItem('tasks', JSON.stringify(this.tasks));
+          // localStorage.setItem('completedTasks', JSON.stringify(this.completedTasks));
+        }
+      }
+    });
+  </script>
+</body>
+
+</html>
